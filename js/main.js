@@ -1,6 +1,15 @@
 'use strict'
 
+/*
+ * Constants
+ */
+
 const CAT_CLICKER_CLICKS_KEY = 'cat-clicker-clicks-'
+
+
+/*
+ * Data
+ */
 
 const cats = [{
   id: 'lilypad',
@@ -12,20 +21,27 @@ const cats = [{
   name: 'Marshmallow',
   imageUrl: 'images/cat-2.jpg',
   clicks: 0
+}, {
+  id: 'swarkles',
+  name: 'Swarkles',
+  imageUrl: 'images/cat-3.jpg',
+  clicks: 0
+}, {
+  id: 'mosby-boys',
+  name: 'Mosby Boys',
+  imageUrl: 'images/cat-4.jpg',
+  clicks: 0
+}, {
+  id: 'teddy',
+  name: 'Teddy',
+  imageUrl: 'images/cat-5.jpg',
+  clicks: 0
 }]
 
-const handleClick = function (id) {
-  return function (e) {
-    let spanClicks = e.target.parentElement.querySelector('span.clicks')
-    let clicks = Number(spanClicks.innerText)
 
-    spanClicks.innerText = (++clicks).toString()
-
-    if (window.localStorage) {
-      window.localStorage.setItem(CAT_CLICKER_CLICKS_KEY + id, clicks)
-    }
-  }
-}
+/*
+ * Components
+ */
 
 const createCatComponent = function (cat) {
   let title = document.createElement('h3')
@@ -34,7 +50,19 @@ const createCatComponent = function (cat) {
   let img = document.createElement('img')
   img.setAttribute('src', cat.imageUrl)
   img.setAttribute('alt', 'A picture of ' + cat.name)
-  img.addEventListener('click', handleClick(cat.id), false)
+
+  img.addEventListener('click', (function (id) {
+    return function (e) {
+      let spanClicks = e.target.parentElement.querySelector('span.clicks')
+      let clicks = Number(spanClicks.innerText)
+
+      spanClicks.innerText = (++clicks).toString()
+
+      if (window.localStorage) {
+        window.localStorage.setItem(CAT_CLICKER_CLICKS_KEY + id, clicks)
+      }
+    }
+  })(cat.id), false)
 
   let spanClicks = document.createElement('span')
   let clicks = 0
@@ -61,16 +89,65 @@ const createCatComponent = function (cat) {
   return parent
 }
 
-const insertTo = function (parent) {
-  return function (child) {
-    parent.insertAdjacentElement('beforeend', child)
-  }
+const createCatListComponent = function (cat) {
+  let li = document.createElement('div')
+  li.setAttribute('id', cat.id)
+  li.classList.add('list-item')
+  li.innerText = cat.name
+  li.addEventListener('click', (function (id) {
+    return function () {
+      render(id)
+    }
+  })(cat.id), false)
+  return li
 }
 
-const catComponents = cats.map(createCatComponent)
 
-const container = document.createElement('div')
-container.classList.add('container')
-catComponents.forEach(insertTo(container))
+/*
+ * Containers
+ */
 
-document.querySelector('#app').insertAdjacentElement('beforeend', container)
+const listContainer = function (catListComponents) {
+  let container = document.createElement('section')
+  container.classList.add('list')
+  catListComponents.forEach(function (catListComponent) {
+    container.insertAdjacentElement('beforeend', catListComponent)
+  })
+
+  return container
+}
+
+const catContainer = function (catComponent) {
+  let container = document.createElement('section')
+  container.classList.add('container')
+  container.insertAdjacentElement('beforeend', catComponent)
+
+  return container
+}
+
+
+/*
+ * Render
+ */
+
+const render = function (id) {
+  const app = document.querySelector('#app')
+
+  app.querySelectorAll('.list-item').forEach(li => li.classList.remove('active'))
+
+  if (id === undefined) {
+    id = cats[0].id
+    app.insertAdjacentElement('beforeend', listContainer(cats.map(cat => createCatListComponent(cat))))
+  }
+
+  const cat = cats.find(cat => cat.id === id)
+
+  app.querySelector('#' + id + '.list-item').classList.add('active')
+
+  const catContainerRendered = app.querySelector('.container')
+  if (catContainerRendered) {
+    catContainerRendered.remove()
+  }
+
+  app.insertAdjacentElement('beforeend', catContainer(createCatComponent(cat)))
+}
